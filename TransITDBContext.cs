@@ -1,16 +1,19 @@
-﻿using Microsoft.EntityFrameworkCore;
-using TransIT.DAL.Models.Extensions;
+﻿using System;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace TransIT.DAL.Models
+namespace TransIT.API.Models.Entities
 {
-    using Entities;
-    
     public partial class TransITDBContext : DbContext
     {
-        public TransITDBContext() {}
+        public TransITDBContext()
+        {
+        }
 
         public TransITDBContext(DbContextOptions<TransITDBContext> options)
-            : base(options) {}
+            : base(options)
+        {
+        }
 
         public virtual DbSet<ActionType> ActionType { get; set; }
         public virtual DbSet<Bill> Bill { get; set; }
@@ -20,6 +23,7 @@ namespace TransIT.DAL.Models
         public virtual DbSet<Employee> Employee { get; set; }
         public virtual DbSet<Issue> Issue { get; set; }
         public virtual DbSet<IssueLog> IssueLog { get; set; }
+        public virtual DbSet<Location> Location { get; set; }
         public virtual DbSet<Malfunction> Malfunction { get; set; }
         public virtual DbSet<MalfunctionGroup> MalfunctionGroup { get; set; }
         public virtual DbSet<MalfunctionSubgroup> MalfunctionSubgroup { get; set; }
@@ -33,26 +37,23 @@ namespace TransIT.DAL.Models
         public virtual DbSet<Vehicle> Vehicle { get; set; }
         public virtual DbSet<VehicleType> VehicleType { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {}
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            if (!optionsBuilder.IsConfigured)
+            {
+            }
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("ProductVersion", "2.2.3-servicing-35854");
 
-            #region Seeding
-
-            modelBuilder.SeedRoles();
-            modelBuilder.SeedStates();
-
-            #endregion
-
-            #region Configuration
             modelBuilder.Entity<ActionType>(entity =>
             {
                 entity.ToTable("ACTION_TYPE");
 
                 entity.HasIndex(e => e.Name)
-                    .HasName("UQ__ACTION_T__D9C1FA00C4CD8F82")
+                    .HasName("UQ__ACTION_T__D9C1FA00D8EDC403")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("ID");
@@ -144,7 +145,7 @@ namespace TransIT.DAL.Models
                 entity.ToTable("COUNTRY");
 
                 entity.HasIndex(e => e.Name)
-                    .HasName("UQ__COUNTRY__D9C1FA0008D056A7")
+                    .HasName("UQ__COUNTRY__D9C1FA008FF4E681")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("ID");
@@ -185,7 +186,7 @@ namespace TransIT.DAL.Models
                 entity.ToTable("CURRENCY");
 
                 entity.HasIndex(e => e.ShortName)
-                    .HasName("UQ__CURRENCY__F4E7E33EFCB5960C")
+                    .HasName("UQ__CURRENCY__F4E7E33EEBE730B7")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("ID");
@@ -286,8 +287,6 @@ namespace TransIT.DAL.Models
             {
                 entity.ToTable("EMPLOYEE");
 
-                entity.Property(e => e.Id).HasColumnName("ID");
-
                 entity.HasIndex(e => e.BoardNumber)
                     .HasName("UQ_EMPLOYEE_BOARD_NUMBER_UNIQUE")
                     .IsUnique();
@@ -295,6 +294,10 @@ namespace TransIT.DAL.Models
                 entity.HasIndex(e => e.ShortName)
                     .HasName("UQ_EMPLOYEE_SHORT_NAME_UNIQUE")
                     .IsUnique();
+
+                entity.Property(e => e.Id).HasColumnName("ID");
+
+                entity.Property(e => e.BoardNumber).HasColumnName("BOARD_NUMBER");
 
                 entity.Property(e => e.CreateDate)
                     .HasColumnName("CREATE_DATE")
@@ -324,8 +327,6 @@ namespace TransIT.DAL.Models
 
                 entity.Property(e => e.PostId).HasColumnName("POST_ID");
 
-                entity.Property(e => e.BoardNumber).HasColumnName("BOARD_NUMBER");
-
                 entity.Property(e => e.ShortName)
                     .IsRequired()
                     .HasColumnName("SHORT_NAME")
@@ -354,7 +355,7 @@ namespace TransIT.DAL.Models
 
                 entity.Property(e => e.Id).HasColumnName("ID");
 
-                entity.Property(e => e.AssignedToId).HasColumnName("ASSIGNED_TO");
+                entity.Property(e => e.AssignedTo).HasColumnName("ASSIGNED_TO");
 
                 entity.Property(e => e.CreateDate)
                     .HasColumnName("CREATE_DATE")
@@ -390,9 +391,9 @@ namespace TransIT.DAL.Models
 
                 entity.Property(e => e.Warranty).HasColumnName("WARRANTY");
 
-                entity.HasOne(d => d.AssignedTo)
+                entity.HasOne(d => d.AssignedToNavigation)
                     .WithMany(p => p.Issue)
-                    .HasForeignKey(d => d.AssignedToId);
+                    .HasForeignKey(d => d.AssignedTo);
 
                 entity.HasOne(d => d.Create)
                     .WithMany(p => p.IssueCreate)
@@ -498,6 +499,43 @@ namespace TransIT.DAL.Models
                     .HasConstraintName("FK_ISSUE_LOG_SUPPLIER");
             });
 
+            modelBuilder.Entity<Location>(entity =>
+            {
+                entity.ToTable("LOCATION");
+
+                entity.Property(e => e.Id).HasColumnName("ID");
+
+                entity.Property(e => e.CreateDate)
+                    .HasColumnName("CREATE_DATE")
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.CreateId).HasColumnName("CREATE_ID");
+
+                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
+
+                entity.Property(e => e.ModDate)
+                    .HasColumnName("MOD_DATE")
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.ModId).HasColumnName("MOD_ID");
+
+                entity.Property(e => e.Name)
+                    .HasColumnName("NAME")
+                    .HasMaxLength(50);
+
+                entity.HasOne(d => d.Create)
+                    .WithMany(p => p.LocationCreate)
+                    .HasForeignKey(d => d.CreateId)
+                    .HasConstraintName("FK_CREATE_LOCATION_USER");
+
+                entity.HasOne(d => d.Mod)
+                    .WithMany(p => p.LocationMod)
+                    .HasForeignKey(d => d.ModId)
+                    .HasConstraintName("FK_MOD_LOCATION_USER");
+            });
+
             modelBuilder.Entity<Malfunction>(entity =>
             {
                 entity.ToTable("MALFUNCTION");
@@ -568,12 +606,12 @@ namespace TransIT.DAL.Models
                 entity.HasOne(d => d.Create)
                     .WithMany(p => p.MalfunctionGroupCreate)
                     .HasForeignKey(d => d.CreateId)
-                    .HasConstraintName("FK__MALFUNCTI__CREAT__49C3F6B7");
+                    .HasConstraintName("FK__MALFUNCTI__CREAT__73BA3083");
 
                 entity.HasOne(d => d.Mod)
                     .WithMany(p => p.MalfunctionGroupMod)
                     .HasForeignKey(d => d.ModId)
-                    .HasConstraintName("FK__MALFUNCTI__MOD_I__4AB81AF0");
+                    .HasConstraintName("FK__MALFUNCTI__MOD_I__74AE54BC");
             });
 
             modelBuilder.Entity<MalfunctionSubgroup>(entity =>
@@ -624,7 +662,7 @@ namespace TransIT.DAL.Models
                 entity.ToTable("POST");
 
                 entity.HasIndex(e => e.Name)
-                    .HasName("UQ__POST__D9C1FA00936D2A4C")
+                    .HasName("UQ__POST__D9C1FA00297EABB2")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("ID");
@@ -663,11 +701,11 @@ namespace TransIT.DAL.Models
                 entity.ToTable("ROLE");
 
                 entity.HasIndex(e => e.Name)
-                    .HasName("UQ__ROLE__D9C1FA006F146D85")
+                    .HasName("UQ__ROLE__D9C1FA0001C36FF2")
                     .IsUnique();
 
                 entity.HasIndex(e => e.TransName)
-                    .HasName("UQ__ROLE__DF65CE27063C8E85")
+                    .HasName("UQ_ROLE_TRANS_NAME")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("ID");
@@ -692,7 +730,6 @@ namespace TransIT.DAL.Models
                     .HasMaxLength(50);
 
                 entity.Property(e => e.TransName)
-                    .IsRequired()
                     .HasColumnName("TRANS_NAME")
                     .HasMaxLength(50);
 
@@ -712,7 +749,7 @@ namespace TransIT.DAL.Models
                 entity.ToTable("STATE");
 
                 entity.HasIndex(e => e.TransName)
-                    .HasName("UQ__STATE__DF65CE272C763E63")
+                    .HasName("UQ_STATE_TRANS_NAME")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("ID");
@@ -746,17 +783,13 @@ namespace TransIT.DAL.Models
             {
                 entity.ToTable("SUPPLIER");
 
-                entity.HasIndex(e => e.FullName)
-                    .HasName("UQ_FULL_NAME_SUPPLIER")
-                    .IsUnique();
-
                 entity.HasIndex(e => e.Name)
-                    .HasName("UQ__SUPPLIER__D9C1FA0044345D15")
+                    .HasName("UQ__SUPPLIER__D9C1FA0021944BFA")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("ID");
 
-                entity.Property(e => e.CountryId).HasColumnName("COUNTRY");
+                entity.Property(e => e.Country).HasColumnName("COUNTRY");
 
                 entity.Property(e => e.CreateDate)
                     .HasColumnName("CREATE_DATE")
@@ -765,7 +798,7 @@ namespace TransIT.DAL.Models
 
                 entity.Property(e => e.CreateId).HasColumnName("CREATE_ID");
 
-                entity.Property(e => e.CurrencyId).HasColumnName("CURRENCY");
+                entity.Property(e => e.Currency).HasColumnName("CURRENCY");
 
                 entity.Property(e => e.Edrpou)
                     .HasColumnName("EDRPOU")
@@ -790,9 +823,9 @@ namespace TransIT.DAL.Models
                     .HasColumnName("NAME")
                     .HasMaxLength(50);
 
-                entity.HasOne(d => d.Country)
+                entity.HasOne(d => d.CountryNavigation)
                     .WithMany(p => p.Supplier)
-                    .HasForeignKey(d => d.CountryId)
+                    .HasForeignKey(d => d.Country)
                     .HasConstraintName("FK_Country");
 
                 entity.HasOne(d => d.Create)
@@ -800,9 +833,9 @@ namespace TransIT.DAL.Models
                     .HasForeignKey(d => d.CreateId)
                     .HasConstraintName("FK_CREATE_SUPPLIER_USER");
 
-                entity.HasOne(d => d.Currency)
+                entity.HasOne(d => d.CurrencyNavigation)
                     .WithMany(p => p.Supplier)
-                    .HasForeignKey(d => d.CurrencyId)
+                    .HasForeignKey(d => d.Currency)
                     .HasConstraintName("FK_Currency");
 
                 entity.HasOne(d => d.Mod)
@@ -849,17 +882,17 @@ namespace TransIT.DAL.Models
                 entity.ToTable("TRANSITION");
 
                 entity.HasIndex(e => new { e.FromStateId, e.ActionTypeId, e.ToStateId })
-                   .HasName("CK_ISSUE_TRANSITION_UNIQUE")
-                   .IsUnique();
+                    .HasName("CK_ISSUE_TRANSITION_UNIQUE")
+                    .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("ID");
 
                 entity.Property(e => e.ActionTypeId).HasColumnName("ACTION_TYPE_ID");
 
                 entity.Property(e => e.CreateDate)
-                   .HasColumnName("CREATE_DATE")
-                   .HasColumnType("datetime")
-                   .HasDefaultValueSql("(getdate())");
+                    .HasColumnName("CREATE_DATE")
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.CreateId).HasColumnName("CREATE_ID");
 
@@ -868,50 +901,49 @@ namespace TransIT.DAL.Models
                 entity.Property(e => e.IsFixed).HasColumnName("IS_FIXED");
 
                 entity.Property(e => e.ModDate)
-                   .HasColumnName("MOD_DATE")
-                   .HasColumnType("datetime")
-                   .HasDefaultValueSql("(getdate())");
+                    .HasColumnName("MOD_DATE")
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.ModId).HasColumnName("MOD_ID");
 
                 entity.Property(e => e.ToStateId).HasColumnName("TO_STATE_ID");
 
                 entity.HasOne(d => d.ActionType)
-                   .WithMany(p => p.Transition)
-                   .HasForeignKey(d => d.ActionTypeId)
-                   .OnDelete(DeleteBehavior.ClientSetNull)
-                   .HasConstraintName("FK_ACTION_TYPE_ISSUE");
+                    .WithMany(p => p.Transition)
+                    .HasForeignKey(d => d.ActionTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ACTION_TYPE_ISSUE");
 
                 entity.HasOne(d => d.Create)
-                   .WithMany(p => p.TransitionCreate)
-                   .HasForeignKey(d => d.CreateId)
-                   .HasConstraintName("FK_CREATE_ISSUE_TRANSITION_USER");
+                    .WithMany(p => p.TransitionCreate)
+                    .HasForeignKey(d => d.CreateId)
+                    .HasConstraintName("FK_CREATE_ISSUE_TRANSITION_USER");
 
                 entity.HasOne(d => d.FromState)
-                   .WithMany(p => p.TransitionFromState)
-                   .HasForeignKey(d => d.FromStateId)
-                   .OnDelete(DeleteBehavior.ClientSetNull)
-                   .HasConstraintName("FK_FROM_STATE");
+                    .WithMany(p => p.TransitionFromState)
+                    .HasForeignKey(d => d.FromStateId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_FROM_STATE");
 
                 entity.HasOne(d => d.Mod)
-                   .WithMany(p => p.TransitionMod)
-                   .HasForeignKey(d => d.ModId)
-                   .HasConstraintName("FK_MOD_ISSUE_TRANSITION_USER");
+                    .WithMany(p => p.TransitionMod)
+                    .HasForeignKey(d => d.ModId)
+                    .HasConstraintName("FK_MOD_ISSUE_TRANSITION_USER");
 
                 entity.HasOne(d => d.ToState)
-                   .WithMany(p => p.TransitionToState)
-                   .HasForeignKey(d => d.ToStateId)
-                   .OnDelete(DeleteBehavior.ClientSetNull)
-                   .HasConstraintName("FK_TO_STATE");
+                    .WithMany(p => p.TransitionToState)
+                    .HasForeignKey(d => d.ToStateId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_TO_STATE");
             });
-
 
             modelBuilder.Entity<User>(entity =>
             {
                 entity.ToTable("USER");
 
                 entity.HasIndex(e => e.Login)
-                    .HasName("UQ__USER__E39E26657A34F670")
+                    .HasName("UQ__USER__E39E2665C934E6A0")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("ID");
@@ -987,6 +1019,10 @@ namespace TransIT.DAL.Models
             {
                 entity.ToTable("VEHICLE");
 
+                entity.HasIndex(e => e.Vincode)
+                    .HasName("UQ_VINCODE_UNIQUE")
+                    .IsUnique();
+
                 entity.Property(e => e.Id).HasColumnName("ID");
 
                 entity.Property(e => e.Brand)
@@ -1008,6 +1044,8 @@ namespace TransIT.DAL.Models
                     .HasColumnName("INVENTORY_ID")
                     .HasMaxLength(40);
 
+                entity.Property(e => e.LocationId).HasColumnName("LOCATION_ID");
+
                 entity.Property(e => e.ModDate)
                     .HasColumnName("MOD_DATE")
                     .HasColumnType("datetime")
@@ -1021,11 +1059,12 @@ namespace TransIT.DAL.Models
 
                 entity.Property(e => e.RegNum)
                     .HasColumnName("REG_NUM")
-                    .HasMaxLength(8);
+                    .HasMaxLength(15);
 
                 entity.Property(e => e.VehicleTypeId).HasColumnName("VEHICLE_TYPE_ID");
 
                 entity.Property(e => e.Vincode)
+                    .IsRequired()
                     .HasColumnName("VINCODE")
                     .HasMaxLength(20);
 
@@ -1037,6 +1076,11 @@ namespace TransIT.DAL.Models
                     .WithMany(p => p.VehicleCreate)
                     .HasForeignKey(d => d.CreateId)
                     .HasConstraintName("FK_MOD_VEHICLE_USER");
+
+                entity.HasOne(d => d.Location)
+                    .WithMany(p => p.Vehicle)
+                    .HasForeignKey(d => d.LocationId)
+                    .HasConstraintName("FK_VEHICLE_LOCATION");
 
                 entity.HasOne(d => d.Mod)
                     .WithMany(p => p.VehicleMod)
@@ -1054,7 +1098,7 @@ namespace TransIT.DAL.Models
                 entity.ToTable("VEHICLE_TYPE");
 
                 entity.HasIndex(e => e.Name)
-                    .HasName("UQ__VEHICLE___D9C1FA000B16D6EB")
+                    .HasName("UQ__VEHICLE___D9C1FA0095358636")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("ID");
@@ -1088,8 +1132,6 @@ namespace TransIT.DAL.Models
                     .HasForeignKey(d => d.ModId)
                     .HasConstraintName("FK_MOD_VEHICLE_TYPE_ROLE");
             });
-            #endregion
         }
     }
 }
-
